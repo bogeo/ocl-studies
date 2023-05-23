@@ -1,5 +1,5 @@
 model LandParcel
-
+-- test judith
 class LandParcel 
 attributes
     area : Real
