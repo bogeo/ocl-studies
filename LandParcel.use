@@ -1,0 +1,50 @@
+model LandParcel
+
+class LandParcel 
+attributes
+    area : Real
+    id : String
+
+operations
+    split()
+    merge()
+end
+
+class ValidityPeriod
+attributes
+    startDate : Date
+    endDate : Date
+end
+
+class BoundaryLine
+end
+
+class BoundaryPoint
+end
+
+class Date
+attributes
+    day : Integer
+    month : Integer
+    year : Integer
+end
+
+association LandParcel_ValidityPeriod between
+    LandParcel[1]
+    ValidityPeriod[1] role validityperiod
+end
+
+association LandParcel_BoundaryLine between
+    LandParcel[1]
+    BoundaryLine [*] role border
+end
+
+association BoundaryLine_LandParcel between
+    BoundaryLine [1] 
+    LandParcel[2] role neighbours
+end
+
+association BoundaryLine_BoundaryPoint between
+    BoundaryLine[1]
+    BoundaryPoint[*]
+end
