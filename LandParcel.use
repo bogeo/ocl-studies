@@ -56,11 +56,11 @@ constraints
 context LandParcel::split(bl : BoundaryLine) : LandParcel
 pre boundaryLineCanSplitParcel:
 -- die übergebene boundary Line, an der geteilt werden soll, schneidet die Fläche (auf Geometrie Definition warten)
-pre newParcelsNotExisting: -- wahrsch. nicht logisch weil ids noch nicht bekannt / Überschneidungen bereits ausgeschlossen
+--pre newParcelsNotExisting: -- wahrsch. nicht logisch weil ids noch nicht bekannt / Überschneidungen bereits ausgeschlossen
     -- die Flurstücke existieren vorher noch nicht
     --LandParcel.allInstances()->exists(lp | lp.id = self.id) = false and -- result und @pre verwendbar?
     --LandParcel.allInstances()->exists(lp | lp.id = result.id) = false
-pre oldParcelExisting:
+--pre oldParcelExisting:
     -- das Flurstück, das geteilt werden soll, existiert
     LandParcel.allInstances()->exists(lp | lp.id = self.id) = true
 
@@ -100,16 +100,16 @@ post oldParcelHasBeenDeleted:
     -- das alte Flurstück wurde gelöscht / überschrieben
     LandParcel.allInstances()->exists(lp | lp.id = self.id@pre) = false
 
-context LandParcel:merge(lp : LandParcel) : LandParcel
-pre parcelsHaveSharedBorderLine:
+--context LandParcel:merge(lp : LandParcel) : LandParcel
+--pre parcelsHaveSharedBorderLine:
 -- die Flurstücke teilen sich eine Grenze --> Nachbarschaft verwenden
-post sameOuterBorder:
+--post sameOuterBorder:
 -- äußere Begrenzung soll gleich bleiben
-post sameArea:
+--post sameArea:
 -- Fläche soll gleich bleiben
-post startDateMatching:
+--post startDateMatching:
 -- enddatum a,b = startdatum c (existiert?)
-post noParcelsWithOldIDs:
+--post noParcelsWithOldIDs:
 -- alte existieren nicht mehr
 
 context ValidityPeriod
