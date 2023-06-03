@@ -8,8 +8,8 @@ attributes
     id : String
 
 operations
-    split()
-    merge()
+    split(bl : BoundaryLine) : LandParcel -- die 2 neuen Parcels sind 1. das Objekt auf dem die Operation ausgeführt wird und 2. der Rückgabewert der Operation
+    merge(lp : LandParcel) : LandParcel
 end
 
 class ValidityPeriod
@@ -50,3 +50,74 @@ association BoundaryLine_BoundaryPoint between
     BoundaryLine[1]
     BoundaryPoint[*]
 end
+
+constraints
+
+context LandParcel::split(bl : BoundaryLine) : LandParcel
+pre boundaryLineCanSplitParcel:
+-- die übergebene boundary Line, an der geteilt werden soll, schneidet die Fläche (auf Geometrie Definition warten)
+pre newParcelsNotExisting: -- wahrsch. nicht logisch weil ids noch nicht bekannt / Überschneidungen bereits ausgeschlossen
+    -- die Flurstücke existieren vorher noch nicht
+    --LandParcel.allInstances()->exists(lp | lp.id = self.id) = false and -- result und @pre verwendbar?
+    --LandParcel.allInstances()->exists(lp | lp.id = result.id) = false
+pre oldParcelExisting:
+    -- das Flurstück, das geteilt werden soll, existiert
+    LandParcel.allInstances()->exists(lp | lp.id = self.id) = true
+
+post sameOuterBorder:
+    -- äußere Begrenzung soll gleich bleiben
+    self.border@pre = self.border->symmetricDifference(result.border)
+post sameArea:
+    -- Flächengröße soll gleich bleiben
+    self.area@pre = result.area + self.area
+post noEmptyParcel:
+    -- Flächen größer Null
+    self.area > 0 and result.area > 0
+post startDateMatching:
+    -- Das Enddatum der alten Parcel ist das StartDatum der neuen Parcels
+    result.validityperiod.startDate = self.validityperiod.endDate@pre and
+    self.validityperiod.startDate = self.validityperiod.endDate@pre
+post parcelsHaveSharedBorder:
+    -- neue entstandende Flurstücke sind benachbart
+    result.border.neighbours->includes(result) and
+    self.border.neighbours->includes(self)
+post newParcelsAreNotTheSame:
+    -- die neuen Flurstücke dürfen nicht gleich sein (komplett gleiche borders, id, etc)
+    not(self.id = result.id) and
+    not(self.border = result.border)
+post newParcelsAreDifferentFromOld:
+    -- keins der neuen Flurstücke darf gleich sein zum alten
+    not(self.id@pre = result.id) and
+    not(self.border@pre = result.border) and
+    not(self.id@pre = self.id) and
+    not(self.border@pre = self.border)
+
+post newParcelsHaveBeenCreated:
+    -- die neuen Flurstücke existieren
+    LandParcel.allInstances()->exists(lp | lp.id = self.id) = true and
+    LandParcel.allInstances()->exists(lp | lp.id = result.id) = true
+post oldParcelHasBeenDeleted:
+    -- das alte Flurstück wurde gelöscht / überschrieben
+    LandParcel.allInstances()->exists(lp | lp.id = self.id@pre) = false
+
+context LandParcel:merge(lp : LandParcel) : LandParcel
+pre parcelsHaveSharedBorderLine:
+-- die Flurstücke teilen sich eine Grenze --> Nachbarschaft verwenden
+post sameOuterBorder:
+-- äußere Begrenzung soll gleich bleiben
+post sameArea:
+-- Fläche soll gleich bleiben
+post startDateMatching:
+-- enddatum a,b = startdatum c (existiert?)
+post noParcelsWithOldIDs:
+-- alte existieren nicht mehr
+
+context ValidityPeriod
+inv validTimePeriod:
+-- startDate muss kleiner als endDate sein
+  startDate.year < endDate.year or 
+  startDate.year = endDate.year and (
+    (startDate.month < endDate.month) or 
+    (startDate.month = endDate.month and startDate.day <= endDate.day) 
+  )
+
