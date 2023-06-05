@@ -126,7 +126,8 @@ post xAndYAreSet:
     x = self.x@pre + dx and y = self.y@pre + dy
 
 -- TODO: split boundary line
--- context BoundaryLine::split(bp : BoundaryPoint)
+--context BoundaryLine::split(BoundaryPoint : BoundaryPoint)
+
 
 
 --Judith
