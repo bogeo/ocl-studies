@@ -1,14 +1,16 @@
--- Koppe Test
-
+-- LandParcel model, which is used to represent a land parcel 
 model LandParcel
--- test judith
+
+-- Classes:
 class LandParcel 
 attributes
     area : Real
     id : String
+    boundary: BoundaryLine[*] 
 
 operations
-    split(bl : BoundaryLine) : LandParcel -- die 2 neuen Parcels sind 1. das Objekt auf dem die Operation ausgeführt wird und 2. der Rückgabewert der Operation
+    -- die 2 neuen Parcels sind 1. das Objekt auf dem die Operation ausgeführt wird und 2. der Rückgabewert der Operation
+    split(bl : BoundaryLine) : LandParcel 
     merge(lp : LandParcel) : LandParcel
 end
 
@@ -19,9 +21,19 @@ attributes
 end
 
 class BoundaryLine
+attributes
+    firstPoint : BoundaryPoint
+    secondPoint : BoundaryPoint
+operations
+    split(bp : BoundaryPoint) : BoundaryLine[2]
 end
 
 class BoundaryPoint
+attributes
+    x : Real
+    y : Real
+operations
+    move(x : Real, y : Real) : BoundaryPoint
 end
 
 class Date
@@ -31,28 +43,97 @@ attributes
     year : Integer
 end
 
+
+-- Associations:
+-- LandParcel - ValidityPeriod
 association LandParcel_ValidityPeriod between
     LandParcel[1]
     ValidityPeriod[1] role validityperiod
 end
 
+-- LandParcel - BoundaryLine
 association LandParcel_BoundaryLine between
     LandParcel[1]
     BoundaryLine [*] role border
 end
 
+-- BoundaryLine - LandParcel
 association BoundaryLine_LandParcel between
     BoundaryLine [1] 
     LandParcel[2] role neighbours
 end
 
+-- BoundaryLine - BoundaryPoint
 association BoundaryLine_BoundaryPoint between
     BoundaryLine[1]
     BoundaryPoint[*]
 end
 
-constraints
 
+
+constraints
+--Marius
+
+-- Invariants
+-- the boundary line must be a closed polygon firstPoint = lastPoint
+context LandParcel inv closedPolygon:
+    self.border -> first() = self.border -> last()
+
+-- the boundary line must not be empty
+context LandParcel inv noEmptyBoundaryLine:
+    self.border -> size() > 0
+
+-- The ID of a land parcel must be unique
+context LandParcel inv uniqueID:
+    LandParcel.allInstances() -> forAll(landParcel1, landParcel2 |
+        landParcel1 <> landParcel2 implies landParcel1.id <> landParcel2.id)
+
+-- no gap between boundary lines: The pre and post boundary lines must have the same coordinates at the point
+-- where they are connected
+context LandParcel inv noGapBetweenBoundaryLines:
+    self.border -> forAll(BoundaryLine1, BoundaryLine2 | 
+        BoundaryLine1 <> BoundaryLine2
+         implies
+          not(
+            BoundaryLine1.secondPoint.x = BoundaryLine2.firstPoint.x and BoundaryLine1.secondPoint.y = BoundaryLine2.firstPoint.y))
+
+-- FIXME: the coordinates of a boundary point must be positive
+-- context BoundaryPoint inv positiveCoordinates:
+-- self.x > 0 and self.y > 0
+
+-- TODO: The boundary line must not intersect itself
+
+
+-- no duplicate boundary points at the same position (similar to script S 111)
+context BoundaryPoint inv noDuplicateBoundaryPoints:
+    self.border -> forAll(BoundaryPoint1, BoundaryPoint2 | 
+        BoundaryPoint1 <> BoundaryPoint2
+         implies
+          not(
+            BoundaryPoint1.x = BoundaryPoint2.x and BoundaryPoint1.y = BoundaryPoint2.y))
+
+-- no duplicate boundary lines (similar to script S 111)
+context BoundaryLine inv noDuplicateBoundaryLines:
+    self.border -> forAll(BoundaryLine1, BoundaryLine2 | 
+        BoundaryLine1 <> BoundaryLine2
+         implies
+          not(
+            BoundaryLine1.firstPoint.x = BoundaryLine2.firstPoint.x and BoundaryLine1.firstPoint.y = BoundaryLine2.firstPoint.y and
+            BoundaryLine1.secondPoint.x = BoundaryLine2.secondPoint.x and BoundaryLine1.secondPoint.y = BoundaryLine2.secondPoint.y))
+
+
+-- move boundary point (similar to script S 111)
+context BoundaryPoint::move(dx : Real, dy : Real) : BoundaryPoint
+pre xAndYAreNotZero:
+    x <> 0 and y <> 0
+post xAndYAreSet:
+    x = self.x@pre + dx and y = self.y@pre + dy
+
+-- TODO: split boundary line
+context BoundaryLine::split(bp : BoundaryPoint) : BoundaryLine[2]
+
+
+--Judith
 context LandParcel::split(bl : BoundaryLine) : LandParcel
 pre boundaryLineCanSplitParcel:
 -- die übergebene boundary Line, an der geteilt werden soll, schneidet die Fläche (auf Geometrie Definition warten)
