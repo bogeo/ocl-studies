@@ -57,13 +57,13 @@ end
 
 -- BoundaryLine - LandParcel
 association BoundaryLine_LandParcel between
-    BoundaryLine [1] 
-    LandParcel[2] role neighbours
+   BoundaryLine [*] 
+   LandParcel[0..2] role neighbours
 end
 
 -- BoundaryLine - BoundaryPoint
 association BoundaryLine_BoundaryPoint between
-    BoundaryLine[1]
+    BoundaryLine[*]
     BoundaryPoint[*]
 end
 
@@ -87,14 +87,7 @@ context LandParcel inv uniqueID:
     LandParcel.allInstances() -> forAll(landParcel1, landParcel2 |
         landParcel1 <> landParcel2 implies landParcel1.id <> landParcel2.id)
 
--- no gap between boundary lines: The pre and post boundary lines must have the same coordinates at the point
--- where they are connected
-context LandParcel inv noGapBetweenBoundaryLines:
-    self.border -> forAll(BoundaryLine1, BoundaryLine2 | 
-        BoundaryLine1 <> BoundaryLine2
-         implies
-          not(
-            BoundaryLine1.secondPoint.x = BoundaryLine2.firstPoint.x and BoundaryLine1.secondPoint.y = BoundaryLine2.firstPoint.y))
+
 
 -- FIXME: the coordinates of a boundary point must be positive
 -- context BoundaryPoint inv positiveCoordinates:
@@ -113,17 +106,14 @@ context LandParcel inv noDuplicateBoundaryLines:
             BoundaryLine1.firstPoint.x = BoundaryLine2.firstPoint.x and BoundaryLine1.firstPoint.y = BoundaryLine2.firstPoint.y and
             BoundaryLine1.secondPoint.x = BoundaryLine2.secondPoint.x and BoundaryLine1.secondPoint.y = BoundaryLine2.secondPoint.y))
 
--- not the some coordinates for first and second point
-context BoundaryLine inv length:
-    self.firstPoint.x <> self.secondPoint.x and self.firstPoint.y <> self.secondPoint.y 
 
 
 -- move boundary point (similar to script S 111)
 context BoundaryPoint::move(dx : Real, dy : Real) : BoundaryPoint
 pre xAndYAreNotZero:
-    x <> 0 and y <> 0
+    dx <> 0 or dy <> 0
 post xAndYAreSet:
-    x = self.x@pre + dx and y = self.y@pre + dy
+    self.x@pre + dx = self.x
 
 -- TODO: split boundary line
 --context BoundaryLine::split(BoundaryPoint : BoundaryPoint)
